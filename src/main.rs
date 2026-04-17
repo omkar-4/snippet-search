@@ -1,47 +1,63 @@
-use iced::widget::{Column, button, column, text};
+use iced::{Element, Size, Task};
+mod ui;
+
+use ui::{
+    file_card::FileCard,
+    search_bar::{SearchBar, SearchBarMessage},
+    toolbar::{Toolbar, ToolbarMessage},
+};
+
+use crate::ui::{file_card::FileCardMessage, placeholder};
 
 #[derive(Default)]
-struct Counter {
-    value: i32,
+struct App {
+    search: SearchBar,
+    toolbar: Toolbar,
+    card: FileCard,
 }
 
-#[derive(Debug, Clone, Copy)]
-pub enum Message {
-    Increment,
-    Decrement,
-    Double,
-    Half,
+#[derive(Debug, Clone)]
+enum Message {
+    SearchBar(SearchBarMessage),
+    Toolbar(ToolbarMessage),
+    FileCard(FileCardMessage),
 }
 
-impl Counter {
-    pub fn view(&self) -> Column<'_, Message> {
-        column![
-            button("+").on_press(Message::Increment),
-            button("2x").on_press(Message::Double),
-            text(self.value).size(50),
-            button("-").on_press(Message::Decrement),
-            button("0.5x").on_press(Message::Half),
-        ]
-    }
-
-    pub fn update(&mut self, message: Message) {
-        match message {
-            Message::Increment => {
-                self.value += 1;
-            }
-            Message::Decrement => {
-                self.value -= 1;
-            }
-            Message::Double => {
-                self.value *= 2;
-            }
-            Message::Half => {
-                self.value /= 2;
-            }
+fn update(app: &mut App, msg: Message) -> Task<Message> {
+    match msg {
+        Message::SearchBar(SearchBarMessage::InputChanged(v)) => {
+            app.search.value = v;
         }
+        Message::SearchBar(SearchBarMessage::SearchPressed) => {}
+        Message::Toolbar(_) => {}
+        Message::FileCard(_) => {}
     }
+    Task::none()
 }
 
-fn main() -> iced::Result {
-    iced::run(Counter::update, Counter::view)
+fn view(app: &App) -> Element<'_, Message> {
+    iced::widget::column![
+        app.search.view().map(Message::SearchBar),
+        app.toolbar.view().map(Message::Toolbar),
+        app.card.view().map(Message::FileCard)
+    ]
+    .into()
+}
+
+fn boot() -> (App, Task<Message>) {
+    (
+        App {
+            card: placeholder::mock_card(),
+            ..Default::default()
+        },
+        Task::none(),
+    )
+}
+
+pub fn main() -> iced::Result {
+    // iced::run(update, view)
+    iced::application(boot, update, view)
+        .window_size(Size::new(400.0, 500.0))
+        .title(|_: &App| String::from("App Title"))
+        .run()
 }
